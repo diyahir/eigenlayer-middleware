@@ -5,13 +5,16 @@ import "test/integration/User.t.sol";
 
 import "test/integration/IntegrationChecks.t.sol";
 
-contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChecks {
-
+contract Integration_NonFull_Register_CoreBalanceChange_Update is
+    IntegrationChecks
+{
     // 1. Register for all quorums
     // 2. (core) Deposit additional tokens
     // 3. Update stakes
     // 4. Deregister from all quorums
-    function testFuzz_registerAll_increaseCoreBalance_update_deregisterAll(uint24 _random) public {
+    function testFuzz_registerAll_increaseCoreBalance_update_deregisterAll(
+        uint24 _random
+    ) public {
         _configRand({
             _randomSeed: _random,
             _userTypes: DEFAULT | ALT_METHODS,
@@ -56,7 +59,9 @@ contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChe
     // 1. Register for all quorums
     // 2. (core) Deposit additional tokens
     // 3. Deregister from all quorums
-    function testFuzz_registerAll_increaseCoreBalance_deregisterAll(uint24 _random) public {
+    function testFuzz_registerAll_increaseCoreBalance_deregisterAll(
+        uint24 _random
+    ) public {
         _configRand({
             _randomSeed: _random,
             _userTypes: DEFAULT | ALT_METHODS,
@@ -96,7 +101,9 @@ contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChe
     // 1. Register for all quorums
     // 2. (core) Queue full withdrawal
     // 3. updateOperators/updateOperatorsForQuorum
-    function testFuzz_registerAll_decreaseCoreBalance_update(uint24 _random) public {
+    function testFuzz_registerAll_decreaseCoreBalance_update(
+        uint24 _random
+    ) public {
         _configRand({
             _randomSeed: _random,
             _userTypes: DEFAULT | ALT_METHODS,
@@ -118,7 +125,8 @@ contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChe
         check_Register_State(operator, quorums);
 
         // 2. (core) queue full withdrawal
-        (IStrategy[] memory strategies, uint[] memory shares) = operator.exitEigenlayer();
+        (IStrategy[] memory strategies, uint[] memory shares) = operator
+            .exitEigenlayer();
         check_Withdraw_State(operator, quorums, strategies, shares);
 
         // 3. Update stakes
@@ -129,7 +137,9 @@ contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChe
     // 1. Register for all quorums
     // 2. (core) Queue full withdrawal
     // 3. Deregister from all quorums
-    function testFuzz_registerAll_decreaseCoreBalance_deregisterAll(uint24 _random) public {
+    function testFuzz_registerAll_decreaseCoreBalance_deregisterAll(
+        uint24 _random
+    ) public {
         _configRand({
             _randomSeed: _random,
             _userTypes: DEFAULT | ALT_METHODS,
@@ -151,7 +161,8 @@ contract Integration_NonFull_Register_CoreBalanceChange_Update is IntegrationChe
         check_Register_State(operator, quorums);
 
         // 2. (core) queue full withdrawal
-        (IStrategy[] memory strategies, uint[] memory shares) = operator.exitEigenlayer();
+        (IStrategy[] memory strategies, uint[] memory shares) = operator
+            .exitEigenlayer();
         check_Withdraw_State(operator, quorums, strategies, shares);
 
         // 3. Deregister from all quorums
