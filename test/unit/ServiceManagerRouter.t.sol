@@ -19,35 +19,24 @@ contract ServiceManagerRouter_UnitTests is MockAVSDeployer {
             avsDirectory,
             paymentCoordinatorImplementation,
             registryCoordinatorImplementation,
-            stakeRegistryImplementation,
-            roleManagerImplmentation
+            stakeRegistryImplementation
         );
 
-        _registerOperatorWithCoordinator(
-            defaultOperator,
-            MAX_QUORUM_BITMAP,
-            defaultPubKey
-        );
+        _registerOperatorWithCoordinator(defaultOperator, MAX_QUORUM_BITMAP, defaultPubKey);
     }
 
     function test_getRestakeableStrategies_noStrats() public {
-        address[] memory strategies = router.getRestakeableStrategies(
-            address(dummyServiceManager)
-        );
+        address[] memory strategies = router.getRestakeableStrategies(address(dummyServiceManager));
         assertEq(strategies.length, 0);
     }
 
     function test_getRestakeableStrategies_multipleStrats() public {
-        address[] memory strategies = router.getRestakeableStrategies(
-            address(serviceManager)
-        );
+        address[] memory strategies = router.getRestakeableStrategies(address(serviceManager));
         assertEq(strategies.length, 192);
     }
 
     function test_getRestakeableStrategies_badImplementation() public {
-        address[] memory strategies = router.getRestakeableStrategies(
-            address(emptyContract)
-        );
+        address[] memory strategies = router.getRestakeableStrategies(address(emptyContract));
         assertEq(strategies.length, 1);
         assertEq(strategies[0], badReturn);
     }
@@ -59,35 +48,23 @@ contract ServiceManagerRouter_UnitTests is MockAVSDeployer {
     }
 
     function test_getOperatorRestakedStrategies_noStrats() public {
-        address[] memory strategies = router.getOperatorRestakedStrategies(
-            address(dummyServiceManager),
-            defaultOperator
-        );
+        address[] memory strategies = router.getOperatorRestakedStrategies(address(dummyServiceManager), defaultOperator);
         assertEq(strategies.length, 0);
     }
 
     function test_getOperatorRestakedStrategies_multipleStrats() public {
-        address[] memory strategies = router.getOperatorRestakedStrategies(
-            address(serviceManager),
-            defaultOperator
-        );
+        address[] memory strategies = router.getOperatorRestakedStrategies(address(serviceManager), defaultOperator);
         assertEq(strategies.length, 192);
     }
 
     function test_getOperatorRestakedStrategies_badImplementation() public {
-        address[] memory strategies = router.getOperatorRestakedStrategies(
-            address(emptyContract),
-            defaultOperator
-        );
+        address[] memory strategies = router.getOperatorRestakedStrategies(address(emptyContract), defaultOperator);
         assertEq(strategies.length, 1);
         assertEq(strategies[0], badReturn);
     }
 
     function test_getOperatorRestakedStrategies_eoa() public {
-        address[] memory strategies = router.getOperatorRestakedStrategies(
-            eoa,
-            defaultOperator
-        );
+        address[] memory strategies = router.getOperatorRestakedStrategies(eoa, defaultOperator);
         assertEq(strategies.length, 1);
         assertEq(strategies[0], badReturn);
     }

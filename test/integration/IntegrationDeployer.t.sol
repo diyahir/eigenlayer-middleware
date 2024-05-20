@@ -33,7 +33,6 @@ import "src/IndexRegistry.sol";
 import "src/BLSApkRegistry.sol";
 import "test/mocks/ServiceManagerMock.sol";
 import "src/OperatorStateRetriever.sol";
-import "src/RoleManager.sol";
 
 // Mocks and More
 import "src/libraries/BN254.sol";
@@ -44,6 +43,7 @@ import "eigenlayer-contracts/src/test/mocks/EmptyContract.sol";
 import "test/integration/User.t.sol";
 
 abstract contract IntegrationDeployer is Test, IUserDeployer {
+
     using Strings for *;
 
     Vm cheats = Vm(VM_ADDRESS);
@@ -72,7 +72,6 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
     StakeRegistry stakeRegistry;
     IndexRegistry indexRegistry;
     OperatorStateRetriever operatorStateRetriever;
-    RoleManager roleManager;
 
     TimeMachine public timeMachine;
 
@@ -86,14 +85,11 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
     address eigenLayerReputedMultisig = address(this); // admin address
     address constant pauser = address(555);
     address constant unpauser = address(556);
-    address public registryCoordinatorOwner =
-        address(uint160(uint256(keccak256("registryCoordinatorOwner"))));
-    uint256 public churnApproverPrivateKey =
-        uint256(keccak256("churnApproverPrivateKey"));
+    address public registryCoordinatorOwner = address(uint160(uint256(keccak256("registryCoordinatorOwner"))));
+    uint256 public churnApproverPrivateKey = uint256(keccak256("churnApproverPrivateKey"));
     address public churnApprover = cheats.addr(churnApproverPrivateKey);
     address ejector = address(uint160(uint256(keccak256("ejector"))));
-    address paymentUpdater =
-        address(uint160(uint256(keccak256("paymentUpdater"))));
+    address paymentUpdater = address(uint160(uint256(keccak256("paymentUpdater"))));
 
     // Constants/Defaults
     uint64 constant MAX_RESTAKED_BALANCE_GWEI_PER_VALIDATOR = 32e9;
@@ -132,68 +128,22 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
         delegationManager = DelegationManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         strategyManager = StrategyManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         slasher = Slasher(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         eigenPodManager = EigenPodManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         delayedWithdrawalRouter = DelayedWithdrawalRouter(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         avsDirectory = AVSDirectory(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
-        );
-
-        roleManager = RoleManager(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
-            )
+            address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
         );
         // paymentCoordinator = PaymentCoordinator(
         //     address(new TransparentUpgradeableProxy(address(emptyContract), address(proxyAdmin), ""))
@@ -211,20 +161,9 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
         eigenPodBeacon = new UpgradeableBeacon(address(pod));
 
         // Second, deploy the *implementation* contracts, using the *proxy contracts* as inputs
-        DelegationManager delegationImplementation = new DelegationManager(
-            strategyManager,
-            slasher,
-            eigenPodManager
-        );
-        StrategyManager strategyManagerImplementation = new StrategyManager(
-            delegationManager,
-            eigenPodManager,
-            slasher
-        );
-        Slasher slasherImplementation = new Slasher(
-            strategyManager,
-            delegationManager
-        );
+        DelegationManager delegationImplementation = new DelegationManager(strategyManager, slasher, eigenPodManager);
+        StrategyManager strategyManagerImplementation = new StrategyManager(delegationManager, eigenPodManager, slasher);
+        Slasher slasherImplementation = new Slasher(strategyManager, delegationManager);
         EigenPodManager eigenPodManagerImplementation = new EigenPodManager(
             ethPOSDeposit,
             eigenPodBeacon,
@@ -232,12 +171,8 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
             slasher,
             delegationManager
         );
-        DelayedWithdrawalRouter delayedWithdrawalRouterImplementation = new DelayedWithdrawalRouter(
-                eigenPodManager
-            );
-        AVSDirectory avsDirectoryImplemntation = new AVSDirectory(
-            delegationManager
-        );
+        DelayedWithdrawalRouter delayedWithdrawalRouterImplementation = new DelayedWithdrawalRouter(eigenPodManager);
+        AVSDirectory avsDirectoryImplemntation = new AVSDirectory(delegationManager);
         // PaymentCoordinator paymentCoordinatorImplementation = new PaymentCoordinator(
         //     delegationManager,
         //     IStrategyManager(address(strategyManager)),
@@ -249,8 +184,7 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
 
         // Third, upgrade the proxy contracts to point to the implementations
         uint256 minWithdrawalDelayBlocks = 7 days / 12 seconds;
-        IStrategy[]
-            memory initializeStrategiesToSetDelayBlocks = new IStrategy[](0);
+        IStrategy[] memory initializeStrategiesToSetDelayBlocks = new IStrategy[](0);
         uint256[] memory initializeWithdrawalDelayBlocks = new uint256[](0);
         // DelegationManager
         proxyAdmin.upgradeAndCall(
@@ -303,9 +237,7 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
         );
         // Delayed Withdrawal Router
         proxyAdmin.upgradeAndCall(
-            TransparentUpgradeableProxy(
-                payable(address(delayedWithdrawalRouter))
-            ),
+            TransparentUpgradeableProxy(payable(address(delayedWithdrawalRouter))),
             address(delayedWithdrawalRouterImplementation),
             abi.encodeWithSelector(
                 DelayedWithdrawalRouter.initialize.selector,
@@ -355,15 +287,13 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
         timeMachine = new TimeMachine();
 
         cheats.startPrank(registryCoordinatorOwner);
-        registryCoordinator = RegistryCoordinator(
-            address(
-                new TransparentUpgradeableProxy(
-                    address(emptyContract),
-                    address(proxyAdmin),
-                    ""
-                )
+        registryCoordinator = RegistryCoordinator(address(
+            new TransparentUpgradeableProxy(
+                address(emptyContract),
+                address(proxyAdmin),
+                ""
             )
-        );
+        ));
 
         stakeRegistry = StakeRegistry(
             address(
@@ -406,29 +336,21 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
         );
         cheats.stopPrank();
 
-        StakeRegistry stakeRegistryImplementation = new StakeRegistry(
-            IRegistryCoordinator(registryCoordinator),
-            IDelegationManager(delegationManager)
-        );
-        BLSApkRegistry blsApkRegistryImplementation = new BLSApkRegistry(
-            IRegistryCoordinator(registryCoordinator)
-        );
-        IndexRegistry indexRegistryImplementation = new IndexRegistry(
-            IRegistryCoordinator(registryCoordinator)
-        );
+        StakeRegistry stakeRegistryImplementation = new StakeRegistry(IRegistryCoordinator(registryCoordinator), IDelegationManager(delegationManager));
+        BLSApkRegistry blsApkRegistryImplementation = new BLSApkRegistry(IRegistryCoordinator(registryCoordinator));
+        IndexRegistry indexRegistryImplementation = new IndexRegistry(IRegistryCoordinator(registryCoordinator));
         ServiceManagerMock serviceManagerImplementation = new ServiceManagerMock(
-                IAVSDirectory(avsDirectory),
-                paymentCoordinator,
-                IRegistryCoordinator(registryCoordinator),
-                stakeRegistry,
-                IRoleManager(roleManager)
-            );
+            IAVSDirectory(avsDirectory),
+            paymentCoordinator,
+            IRegistryCoordinator(registryCoordinator),
+            stakeRegistry
+        );
 
         proxyAdmin.upgrade(
             TransparentUpgradeableProxy(payable(address(stakeRegistry))),
             address(stakeRegistryImplementation)
         );
-
+        
         proxyAdmin.upgrade(
             TransparentUpgradeableProxy(payable(address(blsApkRegistry))),
             address(blsApkRegistryImplementation)
@@ -446,12 +368,7 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
 
         serviceManager.initialize({initialOwner: registryCoordinatorOwner});
 
-        RegistryCoordinator registryCoordinatorImplementation = new RegistryCoordinator(
-                serviceManager,
-                stakeRegistry,
-                blsApkRegistry,
-                indexRegistry
-            );
+        RegistryCoordinator registryCoordinatorImplementation = new RegistryCoordinator(serviceManager, stakeRegistry, blsApkRegistry, indexRegistry);
         proxyAdmin.upgradeAndCall(
             TransparentUpgradeableProxy(payable(address(registryCoordinator))),
             address(registryCoordinatorImplementation),
@@ -461,7 +378,7 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
                 churnApprover,
                 ejector,
                 pauserRegistry,
-                0 /*initialPausedStatus*/,
+                0/*initialPausedStatus*/,
                 new IRegistryCoordinator.OperatorSetParam[](0),
                 new uint96[](0),
                 new IStakeRegistry.StrategyParams[][](0)
@@ -473,28 +390,14 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
 
     /// @dev Deploy a strategy and its underlying token, push to global lists of tokens/strategies, and whitelist
     /// strategy in strategyManager
-    function _newStrategyAndToken(
-        string memory tokenName,
-        string memory tokenSymbol,
-        uint initialSupply,
-        address owner
-    ) internal {
-        IERC20 underlyingToken = new ERC20PresetFixedSupply(
-            tokenName,
-            tokenSymbol,
-            initialSupply,
-            owner
-        );
+    function _newStrategyAndToken(string memory tokenName, string memory tokenSymbol, uint initialSupply, address owner) internal {
+        IERC20 underlyingToken = new ERC20PresetFixedSupply(tokenName, tokenSymbol, initialSupply, owner); 
         StrategyBase strategy = StrategyBase(
             address(
                 new TransparentUpgradeableProxy(
                     address(baseStrategyImplementation),
                     address(proxyAdmin),
-                    abi.encodeWithSelector(
-                        StrategyBase.initialize.selector,
-                        underlyingToken,
-                        pauserRegistry
-                    )
+                    abi.encodeWithSelector(StrategyBase.initialize.selector, underlyingToken, pauserRegistry)
                 )
             )
         );
@@ -504,10 +407,7 @@ abstract contract IntegrationDeployer is Test, IUserDeployer {
         bool[] memory thirdPartyTransfersForbiddenValues = new bool[](1);
         strategies[0] = strategy;
         cheats.prank(strategyManager.strategyWhitelister());
-        strategyManager.addStrategiesToDepositWhitelist(
-            strategies,
-            thirdPartyTransfersForbiddenValues
-        );
+        strategyManager.addStrategiesToDepositWhitelist(strategies, thirdPartyTransfersForbiddenValues);
 
         // Add to allStrats
         allStrats.push(strategy);

@@ -25,6 +25,7 @@ contract ServiceManagerBase_UnitTests is
     uint32 activationDelay = 7 days;
     /// @notice the commission for all operators across all avss
     uint16 globalCommissionBips = 1000;
+    
 
     // Testing Config and Mocks
     address serviceManagerOwner;
@@ -79,8 +80,7 @@ contract ServiceManagerBase_UnitTests is
             avsDirectory,
             paymentCoordinator,
             registryCoordinatorImplementation,
-            stakeRegistryImplementation,
-            roleManager
+            stakeRegistryImplementation
         );
         serviceManager = ServiceManagerMock(
             address(
@@ -95,11 +95,6 @@ contract ServiceManagerBase_UnitTests is
             )
         );
         serviceManagerOwner = serviceManager.owner();
-
-        roleManager.grantRole(
-            keccak256("PAYMENT_COORDINATOR"),
-            address(serviceManagerOwner)
-        );
 
         _setUpDefaultStrategiesAndMultipliers();
 
@@ -260,9 +255,7 @@ contract ServiceManagerBase_UnitTests is
         IPaymentCoordinator.RangePayment[] memory rangePayments;
 
         cheats.prank(caller);
-        cheats.expectRevert(
-            "ServiceManagerBase.onlyPaymentCoordinator: caller is not the payment coordinator"
-        );
+        cheats.expectRevert("Ownable: caller is not the owner");
         serviceManager.payForRange(rangePayments);
     }
 
@@ -534,9 +527,7 @@ contract ServiceManagerBase_UnitTests is
         cheats.prank(serviceManagerOwner);
         paymentToken.approve(address(serviceManager), mockTokenInitialSupply);
         uint256 avsBalanceBefore = paymentToken.balanceOf(serviceManagerOwner);
-        uint256 paymentCoordinatorBalanceBefore = paymentToken.balanceOf(
-            address(paymentCoordinator)
-        );
+        uint256 paymentCoordinatorBalanceBefore = paymentToken.balanceOf(address(paymentCoordinator));
         uint256 totalAmount = 0;
 
         uint256[] memory amounts = new uint256[](numPayments);
