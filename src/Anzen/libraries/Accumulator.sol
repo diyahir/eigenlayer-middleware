@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
-
-import {Accumulator, SafetyFactorConfig, BPS_DENOMINATOR} from "../static/Structs.sol";
+import "forge-std/console.sol";
+import {Accumulator, SafetyFactorConfig, BPS_DENOMINATOR, PRECISION, MAX_PERFORMANCE_FEE_BPS} from "../static/Structs.sol";
 
 library AccumulatorLib {
     function init(
         Accumulator storage accumulator,
-        uint256 tokensPerSecond
+        uint256 tokensPerSecond,
+        int256 initSafetyFactor
     ) external {
         accumulator.tokensPerSecond = tokensPerSecond;
         accumulator.prevTokensPerSecond = tokensPerSecond;
+        accumulator.lastSafetyFactor = initSafetyFactor;
     }
 
     function overrideTokensPerSecond(
@@ -27,20 +29,22 @@ library AccumulatorLib {
         Accumulator storage accumulator,
         SafetyFactorConfig memory config,
         int256 currentSafetyFactor,
-        uint256 PRECISION,
         uint256 performanceFeeBPS,
         uint256 lastEpochUpdateTimestamp
-    )
-        external
-        returns (uint256 newTokensPerSecond, uint256 prevTokensPerSecond)
-    {
+    ) external {
         _adjustClaimableTokens(
             accumulator,
             performanceFeeBPS,
             lastEpochUpdateTimestamp
         );
 
-        prevTokensPerSecond = accumulator.tokensPerSecond;
+        if (accumulator.lastSafetyFactor == currentSafetyFactor) {
+            return;
+        }
+
+        uint256 prevTokensPerSecond = accumulator.tokensPerSecond;
+
+        uint256 newTokensPerSecond;
 
         if (currentSafetyFactor > config.TARGET_SF_UPPER_BOUND) {
             newTokensPerSecond =
@@ -78,8 +82,8 @@ library AccumulatorLib {
 
     function _adjustClaimableTokens(
         Accumulator storage accumulator,
-        uint256 lastEpochUpdateTimestamp,
-        uint256 performanceFeeBPS
+        uint256 performanceFeeBPS,
+        uint256 lastEpochUpdateTimestamp
     ) internal {
         (uint256 tokensGained, uint256 fee) = _calculateClaimableTokensAndFee(
             accumulator,
@@ -88,8 +92,8 @@ library AccumulatorLib {
             lastEpochUpdateTimestamp
         );
 
-        accumulator.claimableFees += fee;
         accumulator.claimableTokens += tokensGained;
+        accumulator.claimableFees += fee;
         lastEpochUpdateTimestamp = block.timestamp;
     }
 }

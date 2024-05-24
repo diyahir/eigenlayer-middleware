@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.12;
 
+import "../static/Structs.sol";
+
 interface IAVSReservesManager {
     // Event declaration
     event TokenFlowUpdated(uint256 newTokenFlow);
@@ -8,22 +10,20 @@ interface IAVSReservesManager {
 
     function updateFlow() external;
 
-    function transferToPaymentManager() external;
+    // function transferToPaymentManager() external;
 
-    function overrideTokensPerSecond(uint256 newTokensPerSecond) external;
+    function overrideTokensPerSecond(
+        uint256[] memory newTokensPerSecond
+    ) external;
 
     function updateSafetyFactorParams(
-        int256 sf_desired_lower,
-        int256 sf_desired_upper,
-        uint256 reductionFactor,
-        uint256 maxRateLimit
+        SafetyFactorConfig memory newSafetyFactorConfig
     ) external;
 
     function setPaymentMaster(address paymentMaster) external;
 
-    function claimableTokensWithAdjustment()
-        external
-        view
-        returns (uint256 claimableTokens);
+    function claimableTokensWithAdjustment(
+        address rewardToken
+    ) external view returns (uint256 claimableTokens);
     // Use this function to get the amount of tokens that can be claimed by the AVS
 }
